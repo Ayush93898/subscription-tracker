@@ -1,16 +1,24 @@
 import express from "express";
+import cookieParser from "cookie-parser";
 import { PORT } from "./config/env.js";
 import userRouter from "./routes/user.routes.js";
 import authRouter from "./routes/auth.routes.js";
 import subscriptionRouter from "./routes/subscription.routes.js";
 import connectToDatabase from "./database/mongodb.js";
+import errorMiddleware from "./middlewares/error.middleware.js";
 
 const app = express();
+
+app.use(express.json()) // parses JSON body
+app.use(express.urlencoded({extended:false})) // parses form data
+app.use(cookieParser()) // parses cookies
 
 // app.use() for routers → yes, think of it as prefixing.
 app.use("/api/v1/auth", authRouter)
 app.use("/api/v1/users", userRouter)
 app.use("/api/v1/subsciptions", subscriptionRouter)
+
+app.use(errorMiddleware)
 
 app.get("/", (req, res) => {
   res.send("welcome to subscription tracker api!");
