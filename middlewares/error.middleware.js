@@ -8,7 +8,7 @@ const errorMiddleware = (err, req, res, next) => {
   // Mongoose bad ObjectId
   if (err.name === "CastError") {
     statusCode = 404;
-    message = "Resource not found"; //ID is invalid → resource doesn’t exist
+    message = "Resource not found"; //ID is invalid → resource doesn’t exist      
   }
 
   // Mongoose duplicate key error

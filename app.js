@@ -12,7 +12,7 @@ const app = express();
 app.use(express.json()) // parses JSON body
 app.use(express.urlencoded({extended:false})) // parses form data
 app.use(cookieParser()) // parses cookies
-
+ 
 // app.use() for routers → yes, think of it as prefixing.
 app.use("/api/v1/auth", authRouter)
 app.use("/api/v1/users", userRouter)
