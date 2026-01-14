@@ -31,3 +31,25 @@ const errorMiddleware = (err, req, res, next) => {
   });
 };
 export default errorMiddleware;
+
+
+
+// Postman
+//   ↓
+// express.json()
+//   ↓
+// /api/v1/auth router
+//   ↓
+// POST /sign-up
+//   ↓
+// signUp controller
+//   ↓
+// throw error
+//   ↓
+// catch → next(error)
+//   ↓
+// ❌ skip normal middleware
+//   ↓
+// errorMiddleware
+//   ↓
+// res.json()
