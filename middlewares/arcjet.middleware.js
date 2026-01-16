@@ -3,7 +3,17 @@ import aj from "../config/arcjet.js";
 
 const arcjetMiddleware = async (req, res, next) => {
   try {
-    const decision = await aj.protect(req,{requested:1});
+    if (!req.headers["user-agent"]) {
+      return next(); // skip Arcjet
+    }
+
+      const decision = await aj.protect(
+      {
+        ...req,
+        ip: req.ip || req.headers["x-forwarded-for"] || "127.0.0.1",
+      },
+      { requested: 1 }
+    );
 
     if (decision.isDenied()) {
       if (decision.reason.isRateLimit())
