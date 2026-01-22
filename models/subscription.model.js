@@ -94,7 +94,7 @@ subscriptionSchema.pre("save", function () {
   }
   
   // Auto update the status if renewal date has passed
-  if (this.renewalDate < new Date()) {
+  if (this.status !== 'cancelled' && this.renewalDate < new Date()) {
     this.status = "expired";
   }
   // No need to call next() in modern Mongoose
