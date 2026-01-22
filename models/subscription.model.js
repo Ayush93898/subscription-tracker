@@ -30,7 +30,7 @@ const subscriptionSchema = new mongoose.Schema(
         "news",
         "entertainment",
         "lifestyle",
-        "technnology",
+        "technology",
         "finance",
         "politics",
         "other",
@@ -60,6 +60,12 @@ const subscriptionSchema = new mongoose.Schema(
         message: "Renewal date must be after the start date",
       },
     },
+    // Add this inside your subscriptionSchema fields:
+    paymentMethod: {
+      type: String,
+      required: [true, "Payment method is required"],
+      trim: true,
+    },
     user: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
@@ -67,14 +73,14 @@ const subscriptionSchema = new mongoose.Schema(
       index: true,
     },
   },
-  { timestamps: true }
+  { timestamps: true },
 );
 
 // auto calculating renewal date if missing
 // pre hook is code that runs AUTOMATICALLY before something happens.
 //Before saving a subscription to the database, run this code first.
-subscriptionSchema.pre("save", function (next) {
-  if (!this.renewalDate) { // if user did't provide the renewal date 
+subscriptionSchema.pre("save", function () {
+  if (!this.renewalDate) {
     const renewalPeriods = {
       daily: 1,
       weekly: 7,
@@ -83,12 +89,15 @@ subscriptionSchema.pre("save", function (next) {
     };
     this.renewalDate = new Date(this.startDate);
     this.renewalDate.setDate(
-      this.renewalDate.getDate() + renewalPeriods[this.frequency]
+      this.renewalDate.getDate() + renewalPeriods[this.frequency],
     );
   }
-  // auto update the status , if renewal date has passed
-  if (this.renewalDate < new Date()) this.status = "expired";
-  next(); // next() → tells Mongoose “I’m done, continue saving”
+  
+  // Auto update the status if renewal date has passed
+  if (this.renewalDate < new Date()) {
+    this.status = "expired";
+  }
+  // No need to call next() in modern Mongoose
 });
 
 const Subscription = mongoose.model("Subscription", subscriptionSchema);
