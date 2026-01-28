@@ -1,3 +1,5 @@
+import { SERVER_URl } from "../config/env.js";
+import { workflowClient } from "../config/upstash.js";
 import Subscription from "../models/subscription.model.js";
 
 // controllers of subscription
@@ -8,9 +10,22 @@ export const createSubscription = async (req, res, next) => {
       ...req.body, // extract everything that user passsing
       user: req.user._id, // i.e jo loggedIn hai whi subscription create kar sakta hai
     });
+
+    const { workflowRunId } = await workflowClient.trigger({
+      url: `${SERVER_URl}/api/v1/workflows/subscription/reminder`,
+      body: {
+        subscriptionId: subscription.id,
+      },
+      headers: {
+        "content-type": "application/json",
+      },
+      retries: 0,
+    });
+
     res.status(201).json({
       success: true,
       data: subscription,
+      workflowRunId
     });
   } catch (error) {
     next(error);
@@ -33,7 +48,7 @@ export const getUserSubscriptions = async (req, res, next) => {
   }
 };
 
-//get all user -- work is same as upper one contoller
+// get all user -- work is same as upper one contoller
 // NOTE--> Remove /user/:id route and use that one
 export const getAllSubscriptions = async (req, res, next) => {
   try {
@@ -199,7 +214,6 @@ export const cancelSubscription = async (req, res, next) => {
     next(error);
   }
 };
-
 
 // ## Intuition Behind Each Controller
 
