@@ -1,0 +1,660 @@
+{
+  "info": {
+    "_postman_id": "f3417f88-8e15-4f07-9de7-92a4d8d85caa",
+    "name": "SubDub Subscription Tracker API",
+    "description": "Requests mirror the currently implemented Express routes. Some endpoints are intentionally incomplete or have known behavior documented in docs/API_DOCUMENTATION.md. Use disposable local data only.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Health",
+      "item": [
+        {
+          "name": "Welcome",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/",
+              "host": ["{{baseUrl}}"],
+              "path": [""]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('returns 200', function () { pm.response.to.have.status(200); });",
+                  "pm.test('returns welcome text', function () { pm.expect(pm.response.text()).to.include('welcome to subscription tracker api!'); });"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Authentication",
+      "item": [
+        {
+          "name": "Sign up (returns a user document; do not use real credentials)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Postman Example\",\n  \"email\": \"{{email}}\",\n  \"password\": \"{{password}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/auth/sign-up",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "auth", "sign-up"]
+            },
+            "description": "Creates a user and stores the returned JWT. Current implementation also returns the user document including its password hash; use disposable test data."
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (!pm.environment.get('email')) pm.environment.set('email', 'postman-' + pm.variables.replaceIn('{{$guid}}') + '@example.com');",
+                  "if (!pm.environment.get('password')) pm.environment.set('password', 'ReplaceThis123!');"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('returns 201', function () { pm.response.to.have.status(201); });",
+                  "const body = pm.response.json();",
+                  "pm.test('includes success, token, and user', function () { pm.expect(body.success).to.eql(true); pm.expect(body.data.token).to.be.a('string'); pm.expect(body.data.user).to.be.an('object'); });",
+                  "if (body.data && body.data.token) pm.environment.set('token', body.data.token);",
+                  "if (body.data && body.data.user) pm.environment.set('userId', body.data.user._id || body.data.user.id || '');"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Sign in",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{email}}\",\n  \"password\": \"{{password}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/auth/sign-in",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "auth", "sign-in"]
+            },
+            "description": "Set email/password to an existing disposable account. Successful login stores the JWT and userId in the active environment."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('returns 200', function () { pm.response.to.have.status(200); });",
+                  "const body = pm.response.json();",
+                  "pm.test('includes a token and safe user fields', function () { pm.expect(body.success).to.eql(true); pm.expect(body.data.token).to.be.a('string'); pm.expect(body.data.user).to.have.property('id'); pm.expect(body.data.user).not.to.have.property('password'); });",
+                  "if (body.data && body.data.token) pm.environment.set('token', body.data.token);",
+                  "if (body.data && body.data.user) pm.environment.set('userId', body.data.user.id || '');"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Sign in with invalid credentials",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"missing@example.invalid\",\n  \"password\": \"not-the-password\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/auth/sign-in",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "auth", "sign-in"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('returns 401 for invalid credentials', function () { pm.response.to.have.status(401); });",
+                  "pm.test('returns the standard failure shape', function () { const body = pm.response.json(); pm.expect(body.success).to.eql(false); pm.expect(body.error).to.be.a('string'); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Sign out (currently no response)",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/auth/sign-out",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "auth", "sign-out"]
+            },
+            "description": "The current signOut handler is empty and does not send a response; expect a client timeout."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Users (known exposure and placeholders)",
+      "description": "GET /users is unauthenticated and currently returns password hashes. Do not call it against real data.",
+      "item": [
+        {
+          "name": "List users (unsafe current behavior)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/users",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "users"]
+            },
+            "description": "Confirmed security finding: currently returns full user documents, including password hashes."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('returns 200', function () { pm.response.to.have.status(200); });",
+                  "pm.test('returns a data array', function () { const body = pm.response.json(); pm.expect(body.success).to.eql(true); pm.expect(body.data).to.be.an('array'); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get user by ID (requires token; ownership is not enforced)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/users/{{userId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "users", "{{userId}}"]
+            },
+            "description": "Returns a user without password; current implementation does not restrict lookup to the token owner."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('returns 200', function () { pm.response.to.have.status(200); });",
+                  "pm.test('returns a user without password', function () { const body = pm.response.json(); pm.expect(body.success).to.eql(true); pm.expect(body.data).to.be.an('object'); pm.expect(body.data).not.to.have.property('password'); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Create user (placeholder)",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/users",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "users"]
+            },
+            "description": "Placeholder only; returns a title and does not create a user."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('returns the current placeholder response', function () { pm.response.to.have.status(200); pm.expect(pm.response.json().title).to.eql('CREATE new user'); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Update user (placeholder)",
+          "request": {
+            "method": "PUT",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/users/{{userId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "users", "{{userId}}"]
+            },
+            "description": "Placeholder only; returns a title and does not update a user."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('returns the current placeholder response', function () { pm.response.to.have.status(200); pm.expect(pm.response.json().title).to.eql('UPDATE user'); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Delete user (placeholder)",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/users/{{userId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "users", "{{userId}}"]
+            },
+            "description": "Placeholder only; returns a title and does not delete a user."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('returns the current placeholder response', function () { pm.response.to.have.status(200); pm.expect(pm.response.json().title).to.eql('DELETE user'); });"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Subscriptions",
+      "item": [
+        {
+          "name": "Create subscription",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Premium\",\n  \"price\": 200.99,\n  \"currency\": \"USD\",\n  \"frequency\": \"monthly\",\n  \"category\": \"entertainment\",\n  \"startDate\": \"{{$isoTimestamp}}\",\n  \"paymentMethod\": \"Credit Card\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/subscriptions",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "subscriptions"]
+            },
+            "description": "Creates a subscription and triggers QStash. Requires MongoDB, QSTASH_URL/QSTASH_TOKEN, SERVER_URL, and a reachable QStash endpoint. If QStash fails, the DB record may still have been created."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('returns 201', function () { pm.response.to.have.status(201); });",
+                  "const body = pm.response.json();",
+                  "pm.test('includes subscription and workflow run ID', function () { pm.expect(body.success).to.eql(true); pm.expect(body.data).to.be.an('object'); pm.expect(body.workflowRunId).to.be.a('string'); });",
+                  "if (body.data && body.data._id) pm.environment.set('subscriptionId', body.data._id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Create subscription without token (negative)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Premium\",\n  \"price\": 10,\n  \"frequency\": \"monthly\",\n  \"category\": \"entertainment\",\n  \"startDate\": \"{{$isoTimestamp}}\",\n  \"paymentMethod\": \"Card\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/subscriptions",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "subscriptions"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('returns 401 without bearer token', function () { pm.response.to.have.status(401); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "List my subscriptions",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/subscriptions",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "subscriptions"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('returns 200', function () { pm.response.to.have.status(200); });",
+                  "pm.test('includes count and subscription data', function () { const body = pm.response.json(); pm.expect(body.success).to.eql(true); pm.expect(body.count).to.be.a('number'); pm.expect(body.data).to.be.an('array'); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get subscription by ID",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/subscriptions/{{subscriptionId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "subscriptions", "{{subscriptionId}}"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('returns 200', function () { pm.response.to.have.status(200); });",
+                  "pm.test('returns a subscription', function () { const body = pm.response.json(); pm.expect(body.success).to.eql(true); pm.expect(body.data).to.be.an('object'); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Update subscription",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"price\": 120,\n  \"paymentMethod\": \"Credit Card\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/subscriptions/{{subscriptionId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "subscriptions", "{{subscriptionId}}"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('returns 200', function () { pm.response.to.have.status(200); });",
+                  "pm.test('returns the updated subscription', function () { const body = pm.response.json(); pm.expect(body.success).to.eql(true); pm.expect(body.data).to.be.an('object'); pm.expect(body.message).to.include('successfully'); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Cancel subscription",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/subscriptions/{{subscriptionId}}/cancel",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "subscriptions", "{{subscriptionId}}", "cancel"]
+            },
+            "description": "Mutates the test subscription. Use disposable local data."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('returns 200', function () { pm.response.to.have.status(200); });",
+                  "pm.test('returns cancelled subscription', function () { const body = pm.response.json(); pm.expect(body.success).to.eql(true); pm.expect(body.data.status).to.eql('cancelled'); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "List subscriptions for user ID",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/subscriptions/user/{{userId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "subscriptions", "user", "{{userId}}"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('returns 200 for the authenticated owner', function () { pm.response.to.have.status(200); });",
+                  "pm.test('returns a subscription array', function () { const body = pm.response.json(); pm.expect(body.success).to.eql(true); pm.expect(body.data).to.be.an('array'); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Upcoming renewals (currently shadowed)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/subscriptions/upcoming-renewals",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "subscriptions", "upcoming-renewals"]
+            },
+            "description": "Current route order sends this path to GET /:id, which returns an invalid-ID 404."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('documents current shadowed-route behavior', function () { pm.response.to.have.status(404); });",
+                  "pm.test('returns the standard failure shape', function () { const body = pm.response.json(); pm.expect(body.success).to.eql(false); pm.expect(body.error).to.be.a('string'); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Delete subscription",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/subscriptions/{{subscriptionId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "subscriptions", "{{subscriptionId}}"]
+            },
+            "description": "Permanently deletes the test subscription. Use disposable local data."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('returns 200', function () { pm.response.to.have.status(200); });",
+                  "pm.test('returns a success message', function () { const body = pm.response.json(); pm.expect(body.success).to.eql(true); pm.expect(body.message).to.include('deleted'); });"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Workflow callback (QStash only)",
+      "item": [
+        {
+          "name": "Subscription reminder callback",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"subscriptionId\": \"{{subscriptionId}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/workflows/subscription/reminder",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "workflows", "subscription", "reminder"]
+            },
+            "description": "This handler is wrapped by Upstash serve and expects QStash workflow headers/signature. Do not call directly from Postman; trigger it through QStash."
+          }
+        }
+      ]
+    }
+  ]
+}

@@ -10,9 +10,10 @@ export const {
   ARCJET_ENV,
   QSTASH_URL,
   QSTASH_TOKEN,
-  SERVER_URl,
   EMAIL_PASSWORD
 } = process.env; // this line takes process.env.PORT
+
+export const SERVER_URL = process.env.SERVER_URL || process.env.SERVER_URl;
 
 // above line code same as
 // const PORT = process.env.PORT;

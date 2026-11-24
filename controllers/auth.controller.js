@@ -3,7 +3,7 @@ import User from "../models/user.model.js";
 import bcrypt from "bcryptjs";
 import jwt from 'jsonwebtoken';
 import { JWT_EXPIRES, JWT_SECRET } from "../config/env.js";
-// what is req body -> it is an object containing data from the client (POST (as in that req u pass some data))
+
 
 export const signUp = async (req, res, next) => {
   const session = await mongoose.startSession(); // Creates a temporary context where MongoDB tracks changes.

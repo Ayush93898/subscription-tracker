@@ -1,4 +1,4 @@
-import { SERVER_URl } from "../config/env.js";
+import { SERVER_URL } from "../config/env.js";
 import { workflowClient } from "../config/upstash.js";
 import Subscription from "../models/subscription.model.js";
 
@@ -6,13 +6,24 @@ import Subscription from "../models/subscription.model.js";
 
 export const createSubscription = async (req, res, next) => {
   try {
+    if (!SERVER_URL) {
+      const error = new Error("SERVER_URL is not configured");
+      error.statusCode = 500;
+      throw error;
+    }
+
+    const workflowUrl = new URL(
+      "/api/v1/workflows/subscription/reminder",
+      SERVER_URL,
+    ).toString();
+
     const subscription = await Subscription.create({
       ...req.body, // extract everything that user passsing
       user: req.user._id, // i.e jo loggedIn hai whi subscription create kar sakta hai
     });
 
     const { workflowRunId } = await workflowClient.trigger({
-      url: `${SERVER_URl}/api/v1/workflows/subscription/reminder`,
+      url: workflowUrl,
       body: {
         subscriptionId: subscription.id,
       },

@@ -11,7 +11,7 @@ import {
 } from "../controllers/subscription.controller.js";
 const subscriptionRouter = Router();
 
-// /api/v1/subsciptions/.....
+// /api/v1/subscriptions/.....
 
 subscriptionRouter.get("/", authorize, getAllSubscriptions);
 

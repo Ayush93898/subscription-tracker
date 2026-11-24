@@ -6,12 +6,13 @@
   "scripts": {
     "start": "node app.js",
     "dev": "nodemon app.js",
-    "lint": "eslint ."
+    "lint": "eslint .",
+    "test": "node --test"
   },
   "dependencies": {
     "@arcjet/inspect": "^1.0.0-beta.17",
     "@arcjet/node": "^1.0.0-beta.17",
-    "@upstash/workflow": "^1.0.0",
+    "@upstash/workflow": "^1.5.1",
     "bcryptjs": "^3.0.3",
     "cookie-parser": "^1.4.6",
     "dayjs": "^1.11.19",
@@ -27,6 +28,7 @@
     "@eslint/js": "^9.39.2",
     "eslint": "^9.39.2",
     "globals": "^17.0.0",
-    "nodemon": "^3.1.11"
+    "nodemon": "^3.1.11",
+    "supertest": "^7.3.2"
   }
 }
